@@ -1,12 +1,13 @@
 from django.db import models
-from django.utils import timezone
 
 
 class Menu(models.Model):
+    """
+    Menu model
+    """
     season = models.CharField(max_length=20)
     items = models.ManyToManyField('Item', related_name='items')
-    created_date = models.DateTimeField(
-            default=timezone.now)
+    created_date = models.DateTimeField(auto_now_add=True)
     expiration_date = models.DateTimeField(
             blank=True, null=True)
 
@@ -18,11 +19,14 @@ class Menu(models.Model):
 
 
 class Item(models.Model):
+    """
+    Menu items
+    """
     name = models.CharField(max_length=200)
-    description = models.TextField()
+    description = models.CharField(max_length=255)
     chef = models.ForeignKey('auth.User')
     created_date = models.DateTimeField(
-            default=timezone.now)
+            auto_now_add=True)
     standard = models.BooleanField(default=False)
     ingredients = models.ManyToManyField('Ingredient')
 
