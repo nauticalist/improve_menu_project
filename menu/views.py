@@ -3,7 +3,6 @@ from datetime import datetime
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.core.urlresolvers import reverse
 
 from . import models
@@ -45,11 +44,6 @@ def create_new_menu(request):
         form = forms.MenuForm(request.POST)
         if form.is_valid():
             menu = form.save()
-            messages.add_message(
-                request,
-                messages.SUCCESS,
-                'New menu created!'
-            )
             return redirect(reverse('menu_detail', kwargs={'pk': menu.pk}))
     else:
         form = forms.MenuForm()

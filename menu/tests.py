@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.forms import ValidationError
+
 from . import models
 from . import forms
 
@@ -99,15 +101,70 @@ class MenuViewsTest(TestCase):
         self.assertEqual(resp.status_code, 404)
 
     def test_create_new_menu_view(self):
+        """
+        Test view for menu creation page
+        """
         self.client.login(username=self.username, password=self.password)
-        resp = self.client.get(reverse(
+        get_resp = self.client.get(reverse(
             'menu_new'))
-        self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed('menu/menu_new.html')
+        post_resp = self.client.post(reverse(
+            'menu_new'))
+        self.assertEqual(get_resp.status_code, 200)
+        self.assertEqual(post_resp.status_code, 200)
+        self.assertTemplateUsed('menu/menu_form.html')
 
-    def test_create_new_menu_post(self):
-        expiration_date = timezone.now() + timedelta(days=99)
-        resp = self.client.post(reverse('menu_new'),
-                                {'season': 'testseasonx',
-                                 'expiration_date': expiration_date})
-        self.assertEqual(resp.status_code, 302)
+    def test_edit_menu_view(self):
+        """
+        Test edit menu view
+        """
+        self.client.login(username=self.username, password=self.password)
+        get_resp = self.client.get(reverse(
+            'menu_edit', kwargs={'pk': self.menu.pk}))
+        post_resp = self.client.post(reverse(
+            'menu_edit', kwargs={'pk': self.menu.pk}))
+        self.assertEqual(get_resp.status_code, 200)
+        self.assertEqual(post_resp.status_code, 200)
+        self.assertTemplateUsed('menu/menu_form.html')
+
+    def test_create_menu_form_with_valid_data(self):
+        """
+        Check menu form with valid form data
+        """
+        expire_date = timezone.now() + timedelta(days=100)
+        data = {'season': 'seasonx',
+                'items': [self.item1.pk],
+                'expiration_date': expire_date
+                }
+        form = forms.MenuForm(data=data)
+        self.assertTrue(form.is_valid())
+        menu = form.save()
+        self.assertEqual(menu.season, 'seasonx')
+        self.assertEqual(menu.expiration_date, expire_date)
+
+    def test_create_menu_form_with_blank_data(self):
+        """
+        Test create menu form with blank data. Should return false
+        """
+        form = forms.MenuForm(data={})
+        self.assertFalse(form.is_valid())
+
+    def test_create_menu_form_with_invalid_data(self):
+        """
+        Test create menu form with invalid date
+        """
+        expire_date = timezone.now() - timedelta(days=100)
+        data = {'season': 'seasony',
+                'items': [self.item2.pk],
+                'expiration_date': expire_date}
+        form = forms.MenuForm(data=data)
+        self.assertRaises(ValidationError, form.full_clean())
+
+
+class MenuModelsTest(TestCase):
+    def test_menu_repr(self):
+        """
+        Check menu object representation
+        """
+        menu = models.Menu(
+            season='Winter 2017')
+        self.assertEqual(str(menu), 'Winter 2017')
